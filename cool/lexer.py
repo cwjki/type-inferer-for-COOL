@@ -1,193 +1,182 @@
-from .cmp import Grammar, LR1Parser
-
-class Node:
-    pass
-
-class ProgramNode(Node):
-    def __init__(self, declarations):
-        self.declarations = declarations
-        self.line = declarations[0].line
-        self.column = declarations[0].column
-
-class DeclarationNode(Node):
-    pass
-
-class ClassDeclarationNode(DeclarationNode):
-    def __init__(self, idx, features, parent=None):
-        self.id = idx
-        self.parent = parent
-        self.features = features
-        self.line = idx.line
-        self.column = idx.column
-
-class AttrDeclarationNode(DeclarationNode):
-    def __init__(self, idx, typex, expression=None):
-        self.id = idx
-        self.type = typex
-        self.expression = expression
-        self.line = idx.line
-        self.column = idx.column
-
-class FuncDeclarationNode(DeclarationNode):
-    def __init__(self, idx, params, return_type, body):
-        self.id = idx
-        self.params = params
-        self.type = return_type
-        self.body = body
-        self.line = idx.line
-        self.column = idx.column
-
-class ExpressionNode(Node):
-    pass
-
-class IfThenElseNode(ExpressionNode):
-    def __init__(self, condition, if_body, else_body):
-        self.condition = condition
-        self.if_body = if_body
-        self.else_body = else_body
-        self.line = condition.line
-        self.column = condition.column
-
-class WhileLoopNode(ExpressionNode):
-    def __init__(self, condition, body):
-        self.condition = condition
-        self.body = body
-        self.line = condition.line
-        self.column = condition.column
-        
-
-class BlockNode(ExpressionNode):
-    def __init__(self, expressions):
-        self.expressions = expressions
-        self.line = expressions[-1].line
-        self.column = expressions[-1].column
-
-class LetInNode(ExpressionNode):
-    def __init__(self, let_body, in_body):
-        self.let_body = let_body
-        self.in_body = in_body
-        self.line = in_body.line
-        self.column = in_body.column
-
-class CaseOfNode(ExpressionNode):
-    def __init__(self, expression, branches):
-        self.expression = expression
-        self.branches = branches
-        self.line = expression.line
-        self.column = expression.column
-
-class AssignNode(ExpressionNode):
-    def __init__(self, idx, expression):
-        self.id = idx
-        self.expression = expression
-        self.line = idx.line
-        self.column = idx.column
-
-class UnaryNode(ExpressionNode):
-    def __init__(self, expression):
-        self.expression = expression
-        self.line = expression.line
-        self.column = expression.column
-
-class NotNode(UnaryNode):
-    pass
-
-class BinaryNode(ExpressionNode):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-        self.line = left.line
-        self.column = left.column
-
-class LessEqualNode(BinaryNode):
-    pass
-
-class LessNode(BinaryNode):
-    pass
-
-class EqualNode(BinaryNode):
-    pass
-
-class ArithmeticNode(BinaryNode):
-    pass
-
-class PlusNode(ArithmeticNode):
-    pass
-
-class MinusNode(ArithmeticNode):
-    pass
-
-class StarNode(ArithmeticNode):
-    pass
-
-class DivNode(ArithmeticNode):
-    pass
-
-class IsVoidNode(UnaryNode):
-    pass
-
-class ComplementNode(UnaryNode):
-    pass
-
-class FunctionCallNode(ExpressionNode):
-    def __init__(self, obj, idx, args, typex=None):
-        self.obj = obj
-        self.id = idx
-        self.args = args
-        self.type = typex
-        self.line = idx.line
-        self.column = idx.column
-
-class MemberCallNode(ExpressionNode):
-    def __init__(self, idx, args):
-        self.id = idx
-        self.args = args
-        self.line = idx.line
-        self.column = idx.column
-
-class NewNode(ExpressionNode):
-    def __init__(self, typex):
-        self.type = typex
-        self.line = typex.line
-        self.column = typex.column
-
-class AtomicNode(ExpressionNode):
-    def __init__(self, token):
-        self.token = token
-        self.line = token.line
-        self.column = token.column
-
-class IntegerNode(AtomicNode):
-    pass
-
-class IdNode(AtomicNode):
-    pass
-
-class StringNode(AtomicNode):
-    pass
-
-class BoolNode(AtomicNode):
-    pass
+import ply.lex as lex
+from .parser import CoolGrammar
+from .cmp import Token
 
 
-# grammar 
-CoolGrammar = Grammar()
+###### TOKEN LISTS ######
+tokens_dict = dict()
 
-#non-terminals
-program = CoolGrammar.NonTerminal('<program>', startSymbol=True)
-class_list, def_class = CoolGrammar.NonTerminals('<class-list> <def-class>')
-feature_list, feature = CoolGrammar.NonTerminals('<feature-list> <feature>')
-param_list, param = CoolGrammar.NonTerminals('<param-list> <param>')
-expr, member_call, expr_list, let_list, case_list = CoolGrammar.NonTerminals('<expr> <member-call> <expr-list> <let-list> <case-list>')
-truth_expr, comp_expr = CoolGrammar.NonTerminals('<truth-expr> <comp-expr>')
-arith, term, factor, factor_2 = CoolGrammar.NonTerminals('<arith> <term> <factor> <factor-2>')
-atom, func_call, arg_list = CoolGrammar.NonTerminals('<atom> <func-call> <arg-list>')
+literals = ['+', '-', '*', '/', ':', ';', '(', ')', '{', '}', '@', '.', ',']
 
-#terminals
-classx, inherits = CoolGrammar.Terminals('class inherits')
-ifx, then, elsex, fi = CoolGrammar.Terminals('if then else fi')
-whilex, loop, pool = CoolGrammar.Terminals('while loop pool')
-let, inx = CoolGrammar.Terminals('let in')
-case, of, esac = CoolGrammar.Terminals('case of esac')
+reserved = {
+	'class': 'CLASS',
+	'inherits': 'INHERITS',
+	'if': 'IF',
+	'then': 'THEN',
+	'else': 'ELSE',
+	'fi': 'FI',
+	'while': 'WHILE',
+	'loop': 'LOOP',
+	'pool': 'POOL',
+	'let': 'LET',
+	'in': 'IN',
+	'case': 'CASE',
+	'of': 'OF',
+	'esac': 'ESAC',
+	'new': 'NEW',
+	'isvoid': 'ISVOID',
+}
+
+ignored = [' ', '\n', '\f', '\r', '\t', '\v']
+
+tokens = [
+	# Identifiers
+	'TYPE', 'ID',
+	# Primitive data types
+	'INTEGER', 'STRING', 'BOOL',
+	# Special keywords
+	'ACTION',
+	# Operators
+	'ASSIGN', 'LESS', 'LESSEQUAL', 'EQUAL', 'INT_COMPLEMENT', 'NOT',
+] + list(reserved.values())
+
+for tok in tokens + literals:
+	try:
+		tokens_dict[tok] = CoolGrammar[tok.lower()]
+	except KeyError:
+		pass
+
+tokens_dict['ACTION'] = CoolGrammar['=>']
+tokens_dict['ASSIGN'] = CoolGrammar['<-']
+tokens_dict['LESS'] = CoolGrammar['<']
+tokens_dict['LESSEQUAL'] = CoolGrammar['<=']
+tokens_dict['EQUAL'] = CoolGrammar['=']
+tokens_dict['INT_COMPLEMENT'] = CoolGrammar['~']
+
+###### TOKEN RULES ######
+
+# Primitive data types
+
+def t_INTEGER(t):
+	r'[0-9]+'
+	t.value = int(t.value)
+	return t
+
+def t_STRING(t):
+	r'"[^\0\n"]*(\\\n[^\0\n"]*)*"'
+	t.value = t.value[1:-1]
+	return t
+
+def t_BOOL(t):
+	r'true|false'
+	t.value = True if t.value == 'true' else False
+	return t
+
+def t_COMMENT(t):
+	r'--[^\n]+\n|\(\*[^(\*\))]+\*\)'
+	pass  # Discard comments
+
+# Other tokens with precedence before TYPE and ID
+
+def t_NOT(t):
+	r'[nN][oO][tT]'
+	return t
+
+# Identifiers
+
+def t_TYPE(t):
+	r'[A-Z][A-Za-z0-9_]*'
+	return t
+
+def t_ID(t):
+	r'[a-z][A-Za-z0-9_]*'
+	t.type = reserved.get(t.value.lower(), 'ID')
+	return t
+
+# Operators
+
+t_ASSIGN = r'<-'
+t_LESS = r'<'
+t_LESSEQUAL = r'<='
+t_EQUAL = r'='
+t_INT_COMPLEMENT = r'~'
+
+# Special keywords
+
+t_ACTION = r'=>'
 
 
+###### SPECIAL RULES ######
+
+def t_error(t):
+	print("Illegal character '{}'".format(t.value[0]))
+	t.lexer.skip(1)
+
+t_ignore = ''.join(ignored)
+
+
+###### CREATE LEXER ######
+
+lex.lex()
+
+###### TOKENIZER ######
+
+def tokenizer(code):
+
+	tokens = []
+
+	for i, line in enumerate(code.split('\n')):
+		lex.input(line)
+		while True:
+			token = lex.token()
+			if token is None:
+				break
+			tokens.append(Token(token.value, tokens_dict[token.type], i + 1, token.lexpos))
+
+	tokens.append(Token('$', CoolGrammar.EOF))
+	
+	return tokens
+
+def pprint_tokens(tokens):
+    ocur, ccur, semi = CoolGrammar['{'], CoolGrammar['}'], CoolGrammar[';']
+    indent = 0
+    pending = []
+    for token in tokens:
+        pending.append(token)
+        if token.token_type in { ocur, ccur, semi }:
+            if token.token_type == ccur:
+                indent -= 1
+            print('    '*indent + ' '.join(str(t.token_type) for t in pending))
+            pending.clear()
+            if token.token_type == ocur:
+                indent += 1
+    print(' '.join([str(t.token_type) for t in pending]))
+
+##### PROCESS INPUT ######
+
+if __name__ == '__main__':
+
+	# Get file as argument
+
+	import sys
+	if len(sys.argv) != 2:
+	    print('You need to specify a cool source file to read from.', file=sys.stderr)
+	    sys.exit(1)
+	if not sys.argv[1].endswith('.cl'):
+	    print('Argument needs to be a cool source file ending on ".cl".', file=sys.stderr)
+	    sys.exit(1)
+
+	sourcefile = sys.argv[1]
+
+	# Read source file
+
+	with open(sourcefile, 'r') as source:
+	    lex.input(source.read())
+
+	# Read tokens
+
+	while True:
+	    token = lex.token()
+	    if token is None:
+	        break
+	    print(token)
