@@ -1,5 +1,5 @@
 import ply.lex as lex
-from .parser import CoolGrammar
+from CoolGrammar import CoolGrammar
 from .cmp import Token
 
 ###### TOKEN LISTS ######

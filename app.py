@@ -1,4 +1,8 @@
 from flask import Flask, render_template, url_for, request, redirect
+from cool.cmp.evaluation import evaluate_reverse_parse
+from cool.cmp.grammartools import LR1Parser
+from cool.coolGrammar import CoolGrammar
+from cool.lexer import tokenizer
 from cool import coolAnalyzer
 
 app = Flask(__name__)
@@ -7,6 +11,19 @@ app = Flask(__name__)
 def index():
     try:
         if request.method == 'POST':
+
+            code = request.form['code']
+            tokens = tokenizer(code)
+            CoolParser = LR1Parser(CoolGrammar)
+            parse, operations = CoolParser(tokens)
+            if not operations:
+                #Error
+                return
+            ast = evaluate_reverse_parse(parse, operations, tokens)
+
+
+
+
             return render_template('index.html', boolean=False )
         
         else:
