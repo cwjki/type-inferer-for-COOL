@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock%}
+
+{% block body %}
+
+{% if boolean: %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>La gramática no es correcta.</strong> Sugerimos revisar la info.
+        <button type="button" class="close" data-dpassismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+{% endif%}
+
+<div class="form-group shadow-textarea">
+    <form action="/" method="post">
+        <label for="code"></label>
+        <textarea class="form-control" name="code" id="code" rows="5" placeholder="Escriba su código aquí..."></textarea><br>
+
+        <div class="row">
+            <div class="col text-center">
+                <input class="btn btn-info" type="submit" id="content" name="content" value='Analizar'/>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
