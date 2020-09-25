@@ -1,4 +1,5 @@
 from .cmp import Grammar
+from .ast import *
 
 # grammar
 CoolGrammar = Grammar()
