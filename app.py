@@ -24,6 +24,8 @@ def index():
 
             ast = evaluate_reverse_parse(parse, operations, tokens)
             formatter = FormatVisitor()
+            tree = formatter.visit(ast)
+            print(tree)
 
             
             return render_template('index.html', boolean=False )
