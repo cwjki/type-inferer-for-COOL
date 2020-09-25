@@ -1,9 +1,9 @@
-from .cmp.pycompiler import Grammar
+from .cmp import Grammar
 
-# grammar 
+# grammar
 CoolGrammar = Grammar()
 
-#non-terminals
+# non-terminals
 program = CoolGrammar.NonTerminal('<program>', startSymbol=True)
 class_list, def_class = CoolGrammar.NonTerminals('<class-list> <def-class>')
 feature_list, feature = CoolGrammar.NonTerminals('<feature-list> <feature>')
@@ -13,7 +13,7 @@ truth_expr, comp_expr = CoolGrammar.NonTerminals('<truth-expr> <comp-expr>')
 arith, term, factor, factor_2 = CoolGrammar.NonTerminals('<arith> <term> <factor> <factor-2>')
 atom, func_call, arg_list = CoolGrammar.NonTerminals('<atom> <func-call> <arg-list>')
 
-#terminals
+# terminals
 classx, inherits = CoolGrammar.Terminals('class inherits')
 ifx, then, elsex, fi = CoolGrammar.Terminals('if then else fi')
 whilex, loop, pool = CoolGrammar.Terminals('while loop pool')
@@ -25,17 +25,17 @@ notx, less, leq, equal = CoolGrammar.Terminals('not < <= =')
 new, idx, typex, integer, string, boolx = CoolGrammar.Terminals('new id type integer string bool')
 
 # productions
-program %= class_list, lambda h,s: ProgramNode(s[1])
+program %= class_list, lambda h, s: ProgramNode(s[1])
 
-# <class-list>
-class_list %= def_class + class_list, lambda h,s: [s[1]] + s[2]
-class_list %= def_class, lambda h,s: [s[1]]
+# <class-list>   
+class_list %= def_class + class_list, lambda h, s: [s[1]] + s[2]
+class_list %= def_class, lambda h, s: [s[1]]
 
-# <def-class>
+# <def-class>   
 def_class %= classx + typex + ocur + feature_list + ccur + semi, lambda h, s: ClassDeclarationNode(s[2], s[4])
 def_class %= classx + typex + inherits + typex + ocur + feature_list + ccur + semi, lambda h, s: ClassDeclarationNode(s[2], s[6], s[4])
 
-# <feature-list>
+# <feature-list> 
 feature_list %= feature + feature_list, lambda h, s: [s[1]] + s[2]
 feature_list %= CoolGrammar.Epsilon, lambda h, s: []
 
@@ -43,7 +43,7 @@ feature_list %= CoolGrammar.Epsilon, lambda h, s: []
 feature %= idx + colon + typex + semi, lambda h, s: AttrDeclarationNode(s[1], s[3])
 feature %= idx + colon + typex + larrow + expr + semi, lambda h, s: AttrDeclarationNode(s[1], s[3], s[5])
 
-# <def-func>    
+# <def-func>     
 feature %= idx + opar + param_list + cpar + colon + typex + ocur + expr + ccur + semi, lambda h, s: FuncDeclarationNode(s[1], s[3], s[6], s[8]) 
 feature %= idx + opar + cpar + colon + typex + ocur + expr + ccur + semi, lambda h, s: FuncDeclarationNode(s[1], [], s[5], s[7]) 
 
@@ -54,7 +54,7 @@ param_list %= param + comma + param_list, lambda h, s: [s[1]] + s[3]
 # <param>        
 param %= idx + colon + typex, lambda h, s: (s[1], s[3])
 
-# <expr>         
+# <expr>        
 expr %= ifx + expr + then + expr + elsex + expr + fi, lambda h, s: IfThenElseNode(s[2], s[4], s[6])
 expr %= whilex + expr + loop + expr + pool, lambda h, s: WhileLoopNode(s[2], s[4])
 expr %= ocur + expr_list + ccur, lambda h, s: BlockNode(s[2])
@@ -73,7 +73,7 @@ let_list %= idx + colon + typex + larrow + expr, lambda h, s: [(s[1], s[3], s[5]
 let_list %= idx + colon + typex + comma + let_list, lambda h, s: [(s[1], s[3], None)] + s[5]
 let_list %= idx + colon + typex + larrow + expr + comma + let_list, lambda h, s: [(s[1], s[3], s[5])] + s[7]
 
-# <case-list>   
+# <case-list>    
 case_list %= idx + colon + typex + rarrow + expr + semi, lambda h, s: [(s[1], s[3], s[5])]
 case_list %= idx + colon + typex + rarrow + expr + semi + case_list, lambda h, s: [(s[1], s[3], s[5])] + s[7]
 
@@ -87,21 +87,21 @@ comp_expr %= comp_expr + less + arith, lambda h, s: LessNode(s[1], s[3])
 comp_expr %= comp_expr + equal + arith, lambda h, s: EqualNode(s[1], s[3])
 comp_expr %= arith, lambda h, s: s[1]
 
-# <arith> 
+# <arith>      
 arith %= arith + plus + term, lambda h, s: PlusNode(s[1], s[3])
 arith %= arith + minus + term, lambda h, s: MinusNode(s[1], s[3])
 arith %= term, lambda h, s: s[1]
 
-# <term> 
+# <term>        
 term %= term + star + factor, lambda h, s: StarNode(s[1], s[3])
 term %= term + div + factor, lambda h, s: DivNode(s[1], s[3])
 term %= factor, lambda h, s: s[1]
 
-# <factor>
+# <factor>     
 factor %= isvoid + factor_2, lambda h, s: IsVoidNode(s[2])
 factor %= factor_2, lambda h, s: s[1]
 
-# <factor-2>
+# <factor-2>    
 factor_2 %= compl + atom, lambda h, s: ComplementNode(s[2])
 factor_2 %= atom, lambda h, s: s[1]
 
@@ -115,16 +115,17 @@ atom %= integer, lambda h, s: IntegerNode(s[1])
 atom %= string, lambda h, s: StringNode(s[1])
 atom %= boolx, lambda h, s: BoolNode(s[1])
 
-# <func-call>
+# <func-call>   
 func_call %= dot + idx + opar + arg_list + cpar, lambda h, s: (s[2], s[4])
 func_call %= dot + idx + opar + cpar, lambda h, s: (s[2], [])
 func_call %= at + typex + dot + idx + opar + arg_list + cpar, lambda h, s: (s[4], s[6], s[2])
 func_call %= at + typex + dot + idx + opar + cpar, lambda h, s: (s[4], [], s[2])
 
-# <arg-list>    
+# <arg-list>    ???
 arg_list %= expr, lambda h, s: [s[1]]
 arg_list %= expr + comma + arg_list, lambda h, s: [s[1]] + s[3]
 
 # <member-call> ???
 member_call %= idx + opar + arg_list + cpar, lambda h, s: MemberCallNode(s[1], s[3])
 member_call %= idx + opar + cpar, lambda h, s: MemberCallNode(s[1], [])
+

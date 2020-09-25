@@ -15,6 +15,7 @@ def index():
             code = request.form['code']
             tokens = tokenizer(code)
             CoolParser = LR1Parser(CoolGrammar)
+            print(CoolGrammar)
             parse, operations = CoolParser(tokens)
             if not operations:
                 #Error
@@ -34,5 +35,5 @@ def index():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
     
