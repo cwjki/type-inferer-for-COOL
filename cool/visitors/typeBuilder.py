@@ -51,7 +51,7 @@ class TypeBuilder:
         try:
             self.context.get_type('Main').get_method('main')
         except SemanticError:
-            self.errors.append(ERROR_ON % (node.line, node.column) + 'The class Main and method main are needed.')
+            self.errors.append(ERROR_ON % (node.line, node.column) + 'Every program must have a class Main with a method main.')
 
     @visitor.when(ClassDeclarationNode)
     def visit(self, node):
