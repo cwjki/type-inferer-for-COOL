@@ -1,4 +1,4 @@
-from .lexer import *
-from .ast import *
-from .coolGrammar import *
-from .visitors import FormatVisitor
+from .lexer import tokenizer
+from .coolGrammar import CoolGrammar
+from .cmp import evaluate_reverse_parse, LR1Parser
+from .visitors import FormatVisitor, TypeCollector, TypeBuilder

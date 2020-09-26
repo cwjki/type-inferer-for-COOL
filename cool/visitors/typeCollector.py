@@ -2,7 +2,7 @@ from cool.cmp import visitor, Context, SelfType, AutoType, SemanticError
 from cool.ast import ProgramNode, ClassDeclarationNode
 from cool.errors import ERROR_ON
 
-class TypeColletor():
+class TypeCollector():
     def __init__(self, errors = []):
         self.context = Context()
         self.errors = errors

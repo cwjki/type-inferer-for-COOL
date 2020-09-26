@@ -1,8 +1,8 @@
 from flask import Flask, render_template, url_for, request, redirect
-from cool.cmp.evaluation import evaluate_reverse_parse
-from cool.cmp.grammartools import LR1Parser
-from cool.coolGrammar import CoolGrammar
-from cool.lexer import tokenizer
+from cool import evaluate_reverse_parse
+from cool import LR1Parser
+from cool import CoolGrammar
+from cool import tokenizer
 from cool import FormatVisitor
 
 import sys
