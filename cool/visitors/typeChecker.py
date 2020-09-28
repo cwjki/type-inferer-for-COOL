@@ -245,9 +245,79 @@ class TypeChecker:
 
         node.static_type = self.bool_type
 
+    @visitor.when(ArithmeticNode)
+    def visit(self, node, scope):
+        self.visit(node.left, scope.create_child())
+        left_type = node.left.static_type
+        self.visit(node.right, scope.create_child())
+        right_type = node.right.static_type
+
+        if not left_type.conforms_to(self.int_type):
+            self.errors.append(ERROR_ON % (node.line, node.column) + INCOMPATIBLE_TYPES % (left_type.name, self.int_type.name))
+        if not right_type.conforms_to(self.int_type):
+            self.errors.append(ERROR_ON % (node.line, node.column) + INCOMPATIBLE_TYPES % (right_type.name, self.int_type.name))
+
+        node.static_type = self.int_type
+
+    @visitor.when(IsVoidNode)
+    def visit(self, node, scope):
+        self.visit(node.expression, scope.create_child())
+        node.static_type = self.bool_type
     
+    @visitor.when(ComplementNode)
+    def visit(self, node, scope):
+        expr = node.expression
+        self.visit(expr, scope.create_child())
+        expr_type = expr.static_type
 
+        if not expr_type.conforms_to(self.int_type):
+            self.errors.append(ERROR_ON % (expr.line, expr.column) + INCOMPATIBLE_TYPES % (expr.name, self.int_type.name))
 
+        node.static_type = self.int_type
 
+    @visitor.when(FunctionCallNode)
+    def visit(self, node, scope):
+        self.visit(node.obj, scope.create_child())
+        obj_type = node.obj.static_type
 
+        try:
+            if node.type:
+                try:
+                    node_type = self.context.get_type(node.type.lex)
+                except SemanticError as error:
+                    self.errors.append(ERROR_ON % (node.type.line, node.type.column) + error.text)
+                    node_type = ErrorType()
+                else:
+                    if isinstance(node_type, SelfType) or isinstance(node_type, AutoType):
+                        self.errors.append(ERROR_ON % (node.type.line, node.type.column) + f'Type "{node.type}" cannot be used as type of a dispatch.')
+                        node_type = ErrorType()
+                
+                if not obj_type.conforms_to(node_type):
+                    self.errors.append(ERROR_ON % (node.obj.line, node.obj.column) + INCOMPATIBLE_TYPES % (obj_type.name, node_type.name))
+
+                obj_type = node_type
+
+            obj_method = obj_type.get_method(node.id.lex)
+            node_type = obj_type if isinstance(obj_method.return_type, SelfType) else obj_method.return_type
+        
+        except SemanticError as error:
+            self.errors.append(ERROR_ON % (node.line, node.column) + error.text)
+            node_type = ErrorType()
+            obj_method = None
+            
+        for arg in node.args:
+            self.visit(arg, scope.create_child())
+        
+        if obj_method and len(node.args) == len(obj_method.param_types):
+            for arg, param_type in zip(node.args, obj_method.param_types):
+                arg_type = arg.static_type
+
+                if not arg_type.conforms_to(param_type):
+                    self.errors.append(ERROR_ON % (arg.line, arg.column) + INCOMPATIBLE_TYPES % (arg_type.name, param_type.name))
+        else:
+            self.errors.append(ERROR_ON % (node.line, node.column) + f'Method "{node.id.lex}" cannot be dispatched.')
+        
+        node.static_type = node_type
+
+    
 
