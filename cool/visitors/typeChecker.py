@@ -319,5 +319,61 @@ class TypeChecker:
         
         node.static_type = node_type
 
-    
+    @visitor.when(MemberCallNode)
+    def visit(self, node, scope):
+        obj_type = self.current_type
 
+        try:
+            obj_method = obj_type.get_method(node.id.lex)
+            node_type = obj_type if isinstance(obj_method.return_type, SelfType) else obj_method.return_type
+        except SemanticError as error:
+            self.errors.append(ERROR_ON % (node.line, node.column) + error.text)
+            node_type = ErrorType()
+            obj_method = None
+        
+        for arg in node.args:
+            self.visit(arg, scope.create_child())
+        
+        if obj_method and len(node.args) == len(obj_method.param_types):
+            for arg, param_type in zip(node.args, obj_method.param_types):
+                arg_type = arg.static_type
+
+                if not arg_type.conforms_to(param_type):
+                    self.errors.append(ERROR_ON % (arg.line, arg.column) + INCOMPATIBLE_TYPES % (arg_type.name, param_type.name))
+        else:
+            self.errors.append(ERROR_ON % (node.line, node.column) + f'Method "{node.id.lex}" cannot be dispatched.')
+        
+        node.static_type = node_type
+
+    @visitor.when(NewNode)
+    def visit(self, node, scope):
+        try:
+            node_type = self.context.get_type(node.type.lex)
+        except SemanticError as error:
+            self.errors.append(ERROR_ON % (node.line, node.column) + error.text)
+            node_type = ErrorType()
+        
+        node.static_type = node_type
+    
+    @visitor.when(IntegerNode)
+    def visit(self, node, scope):
+        node.static_type = self.int_type
+
+    @visitor.when(StringNode)
+    def visit(self, node, scope):
+        node.static_type = self.string_type
+
+    @visitor.when(BoolNode)
+    def visit(self, node, scope):
+        node.static_type = self.bool_type
+
+    @visitor.when(IdNode)
+    def visit(self, node, scope):
+        if scope.is_defined(node.token.lex):
+            var = scope.find_variable(node.token.lex)
+            node_type = var.type
+        else:
+            self.errors.append(ERROR_ON % (node.line, node.column) + VARIABLE_NOT_DEFINED % (node.token.lex, self.current_method.name))
+            node.type = ErrorType
+        
+        node.static_type = node_type
