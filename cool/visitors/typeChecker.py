@@ -86,4 +86,65 @@ class TypeChecker:
         if not body_type.conforms_to(return_type):
             self.errors.append(ERROR_ON % (body.line, body.column) + INCOMPATIBLE_TYPES % (body_type.name, return_type.name))
 
+    @visitor.when(IfThenElseNode)
+    def visit(self, node, scope):
+        condition = node.condition
+        self.visit(node.condition, scope.create_child())
+        condition_type = condition.static_type
+
+        if not condition_type.conforms_to(self.bool_type):
+            self.errors.append(ERROR_ON % (condition.line, condition.column) + INCOMPATIBLE_TYPES % (condition_type.name, self.bool_type.name))
+
+        self.visit(node.if_body, scope.create_child())
+        if_type = node.if_body.static_type
+
+        self.visit(node.else_body, scope.create_child())
+        else_type = node.else_body.static_type
+
+        node.static_type = if_type.type_union(else_type)
+
+    @visitor.when(WhileLoopNode)
+    def visit(self, node, scope):
+        condition = node.condition
+        self.visit(condition, scope.create_child())
+        condition_type = condition.static_type
+
+        if not condition_type.conforms_to(self.bool_type):
+            self.errors.append(ERROR_ON % (condition.line, condition.column) + INCOMPATIBLE_TYPES % (condition_type.name, self.bool_type.name))
+
+        self.visit(node.body, scope.create_child())
+        node.static_type = self.object_type
+
+    @visitor.when(BlockNode)
+    def visit(self, node, scope):
+        for expr in node.expressions:
+            self.visit(expr, scope.create_child())
+        
+        node.static_type = node.expressions[-1].static_type
+
+    @visitor.when(LetInNode)
+    def visit(self, node, scope):
+        for idx, typex, expr in node.let_body:
+            try:
+                node_type = self.context.get_type(typex.lex)
+            except SemanticError as error:
+                self.errors.append(ERROR_ON % (typex.line, typex.column) + error.text)
+                node_type = ErrorType()
+
+            id_type = self.current_type if isinstance(node_type, SelfType) else node_type
+            child_scope = scope.create_child()
+
+            if expr:
+                self.visit(expr, child_scope)
+                expr_type = expr.static_type
+                if not expr_type.conforms_to(id_type):
+                    self.errors.append(ERROR_ON % (expr.line, expr.column) + INCOMPATIBLE_TYPES % (expr_type.name, id_type.name))
+            
+            scope.define_variable(idx.lex, id_type)
+        
+        self.visit(node.in_body, scope.create_child())
+        node.static_type = node.in_body.static_type
+
+
+
 
