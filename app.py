@@ -3,7 +3,7 @@ from cool import evaluate_reverse_parse
 from cool import LR1Parser
 from cool import CoolGrammar
 from cool import tokenizer
-from cool import FormatVisitor
+from cool import FormatVisitor, TypeCollector, TypeBuilder, TypeChecker
 
 import sys
 
@@ -25,8 +25,19 @@ def index():
             ast = evaluate_reverse_parse(parse, operations, tokens)
             formatter = FormatVisitor()
             tree = formatter.visit(ast)
-            print(tree)
 
+            errors = []
+            collector = TypeCollector(errors)
+            collector.visit(ast)
+            context = collector.context
+
+            builder = TypeBuilder(context, errors)
+            builder.visit(ast)
+
+            checker = TypeChecker(context, errors)
+            scope = checker.visit(ast)
+            
+            print("Fin")
             
             return render_template('index.html', boolean=False )
         
@@ -34,6 +45,7 @@ def index():
             return render_template('index.html', boolean=False )
     
     except:
+        print("Error", sys.exc_info()[0])
         return render_template('index.html', boolean=False )
 
 

@@ -45,7 +45,7 @@ class TypeBuilder:
 
     @visitor.when(ProgramNode)
     def visit(self, node):
-        for class_def in node.declaration:
+        for class_def in node.declarations:
             self.visit(class_def)
 
         try:
@@ -67,7 +67,7 @@ class TypeBuilder:
         else:
             self.current_type.set_parent(self.object_type)
 
-        for feature in node.feature:
+        for feature in node.features:
             self.visit(feature)
         
     @visitor.when(AttrDeclarationNode)
