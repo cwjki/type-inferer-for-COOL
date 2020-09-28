@@ -198,5 +198,56 @@ class TypeChecker:
             self.errors.append(ERROR_ON % (expr.line, expr.column) + INCOMPATIBLE_TYPES % (expr_type.name, self.bool_type.name))
 
         node.static_type = self.bool_type
-        
-          
+
+    @visitor.when(LessEqualNode)
+    def visit(self, node, scope):
+        self.visit(node.left, scope.create_child())
+        left_type = node.left.static_type
+        self.visit(node.right, scope.create_child())
+        right_type = node.right.static_type
+
+        if not left_type.conforms_to(self.int_type):
+            self.errors.append(ERROR_ON % (node.line, node.column) + INCOMPATIBLE_TYPES % (left_type.name, self.int_type.name))
+        if not right_type.conforms_to(self.int_type):
+            self.errors.append(ERROR_ON % (node.line, node.column) + INCOMPATIBLE_TYPES % (right_type.name, self.int_type.name))
+
+        node.static_type = self.bool_type
+
+    @visitor.when(LessNode)
+    def visit(self, node, scope):
+        self.visit(node.left, scope.create_child())
+        left_type = node.left.static_type
+        self.visit(node.right, scope.create_child())
+        right_type = node.right.static_type
+
+        if not left_type.conforms_to(self.int_type):
+            self.errors.append(ERROR_ON % (node.line, node.column) + INCOMPATIBLE_TYPES % (left_type.name, self.int_type.name))
+        if not right_type.conforms_to(self.int_type):
+            self.errors.append(ERROR_ON % (node.line, node.column) + INCOMPATIBLE_TYPES % (right_type.name, self.int_type.name))
+
+        node.static_type = self.bool_type
+
+    @visitor.when(EqualNode)
+    def visit(self, node, scope):
+        self.visit(node.left, scope.create_child())
+        left_type = node.left.static_type
+        self.visit(node.right, scope.create_child())
+        right_type = node.right.static_type
+
+        if isinstance(left_type, AutoType) or isinstance(right_type, AutoType):
+            pass
+        elif left_type.conforms_to(self.int_type) ^ right_type.conforms_to(self.int_type):
+            self.errors.append(ERROR_ON % (node.line, node.column) + INVALID_OPERATION % (left_type.name, right_type.name))
+        elif left_type.conforms_to(self.string_type) ^ right_type.conforms_to(self.string_type):
+            self.errors.append(ERROR_ON % (node.line, node.column) + INVALID_OPERATION % (left_type.name, right_type.name))
+        elif left_type.conforms_to(self.bool_type) ^ right_type.conforms_to(self.bool_type):
+            self.errors.append(ERROR_ON % (node.line, node.column) + INVALID_OPERATION % (left_type.name, right_type.name))
+
+        node.static_type = self.bool_type
+
+    
+
+
+
+
+
