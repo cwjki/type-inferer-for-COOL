@@ -145,6 +145,58 @@ class TypeChecker:
         self.visit(node.in_body, scope.create_child())
         node.static_type = node.in_body.static_type
 
+    @visitor.when(CaseOfNode)
+    def visit(self, node, scope):
+        self.visit(node.expression, scope.create_child())
 
+        node.static_type = None
+        for idx, typex, expr in node.branches:
+            try:
+                node_type = self.context.get_type(typex.lex)
+            except SemanticError as error:
+                self.errors.append(ERROR_ON % (typex.line, typex.column) + error.lex)
+            else:
+                if isinstance(node_type, SelfType) or isinstance(node_type, AutoType):
+                    self.errors.append(ERROR_ON % (typex.line, typex.column) + f'Type "{node_type.name}" cannot be used as case branch type.')
+                    node_type = ErrorType()
 
+            id_type = node_type
 
+            child_scope = scope.create_child()
+            child_scope.define_variable(idx.lex, id_type)
+            self.visit(expr, child_scope)
+            expr_type = expr.static_type
+
+            node.static_type = node.static_type.type_union(expr_type) if node.static_type else expr_type
+        
+    @visitor.when(AssignNode)
+    def visit(self, node, scope):
+        expr = node.expression
+        self.visit(expr, scope.create_child())
+        expr_type = expr.static_type
+
+        if scope.is_defined(node.id.lex):
+            var = scope.find_variable(node.id.lex)
+            node_type = var.type
+
+            if var.name == 'self':
+                self.errors.append(ERROR_ON % (node.line, node.column) + SELF_IS_READONLY)
+            elif not expr_type.conforms_to(node_type):
+                self.errors.append(ERROR_ON % (expr.line, expr.column) + INCOMPATIBLE_TYPES % (expr_type.name, node_type.name))
+        else:
+            self.errors.append(ERROR_ON % (node.line, node.column) + VARIABLE_NOT_DEFINED % (node.id.lex, self.current_method.name))
+
+        node.static_type = expr_type
+
+    @visitor.when(NotNode)
+    def visit(self, node, scope):
+        expr = node.expression
+        self.visit(expr, scope.create_child())
+        expr_type = expr.static_type
+
+        if not expr_type.conforms_to(self.bool_type):
+            self.errors.append(ERROR_ON % (expr.line, expr.column) + INCOMPATIBLE_TYPES % (expr_type.name, self.bool_type.name))
+
+        node.static_type = self.bool_type
+        
+          
