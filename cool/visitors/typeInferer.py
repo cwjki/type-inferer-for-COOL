@@ -137,4 +137,42 @@ class TypeInferer:
             expr_type = expr.static_type
             node.static_type = node.static_type.type_union(expr_type) if node.static_type else expr_type
         
+    @visitor.when(AssignNode)
+    def visit(self, node, scope, expected_type=None):
+        var = scope.find_variable(node.id.lex) if scope.is_defined(node.id.lex) else None
+        self.visit(node.expression, scope.children[0], var.type if var and var.infered else expected_type)
+        expr_type = node.expression.static_type
+
+        var.set_lower_type(expr_type)
+        node.static_type = expr_type
+
+    @visitor.when(NotNode)
+    def visit(self, node, scope, expected_type=None):
+        self.visit(node.expression, scope.children[0], self.bool_type)
+        node.static_type = self.bool_type
+
+    @visitor.when(LessEqualNode)
+    def visit(self, node, scope, expected_type= None):
+        self.visit(node.left, scope.children[0], self.int_type)
+        self.visit(node.right, scope.children[1], self.int_type)
+        node.static_type = self.bool_type
+
+    @visitor.when(LessNode)
+    def visit(self, node, scope, expected_type= None):
+        self.visit(node.left, scope.children[0], self.int_type)
+        self.visit(node.right, scope.children[1], self.int_type)
+        node.static_type = self.bool_type
+
+    @visitor.when(EqualNode)
+    def visit(self, node, scope, expected_type= None):
+        self.visit(node.left, scope.children[0], self.int_type)
+        self.visit(node.right, scope.children[1], self.int_type)
+        node.static_type = self.bool_type
+
+    
+
+
+
+
+
 
