@@ -103,11 +103,38 @@ class TypeInferer:
         self.visit(node.expressions[-1], scope.children[-1], expected_type)
         node.static_type = node.expressions[-1].static_type
 
-    
+    @visitor.when(LetInNode)
+    def visit(self, node, scope, expected_type=None):
+        for (idx, typex, expr), child_scope, (i, var) in zip(node.let_body, scope.children[:-1], enumerate(scope.locals)):
+            if expr:
+                self.visit(expr, child_scope, var.type if var.infered else None)
+                expr_type = expr.static_type
 
+                var,set_upper_type(expr_type)
+                if var.infer_type():
+                    self.changed = True
+                    typex.name = var.type.name
+                    self.inferences.append(INFERENCE_ON % (idx.line, idx.column) + INF_VAR % (var.name, var.type.name))
 
+        self.visit(node.in_body, scope.children[-1], expected_type)
 
+        for i, var in enumerate(scope.locals):
+            if var.infer_type():
+                self.changed = True
+                idx, typex, _ = node.let_body[i]
+                typex.name = var.type.name
+                self.inferences.append(INFERENCE_ON % (idx.line, idx.column) + INF_VAR % (var.name, var.type))
 
+        node.static_type = node.in_body.static_type
 
+    @visitor.when(CaseOfNode)
+    def visit(self, node, scope, expected_type=None):
+        self.visit(node.expression, scope.children[0])
+        node.static_type = None
 
+        for (idx, typex, expr), child_scope in zip(node.branches, scope.children[1:]):
+            self.visit(expr, child_scope)
+            expr_type = expr.static_type
+            node.static_type = node.static_type.type_union(expr_type) if node.static_type else expr_type
+        
 
