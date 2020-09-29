@@ -79,11 +79,31 @@ class TypeInferer:
             self.current_method.return_type = var.type
             self.inferences.append(INF_RETRN % (self.current_method.name, self.current_type.name, var.type.name,))
 
+    @visitor.when(IfThenElseNode)
+    def visit(self, node, scope, expected_type=None):
+        self.visit(node.condition, scope.children[0], self.bool_type)
+        self.visit(node.if_body, scope.children[1])
+        self.visit(node.else_body, scope.children[2])
 
+        if_type = node.if_body.static_type
+        else_type = node.else_body.static_type
+        node.static_type = if_type.type_union(else_type)
 
+    @visitor.when(WhileLoopNode)
+    def visit(self, node, scope, expected_type=None):
+        self.visit(node.condition, scope.children[0], self.bool_type)
+        self.visit(node.body, scope.children[1])
+        node.static_type = self.object_type
 
+    @visitor.when(BlockNode)
+    def visit(self, node, scope, expected_type=None):
+        for expr, child_scope in zip(node.expressions[:-1], scope.children[:-1]):
+            self.visit(expr, child_scope)
+        
+        self.visit(node.expressions[-1], scope.children[-1], expected_type)
+        node.static_type = node.expressions[-1].static_type
 
-
+    
 
 
 
