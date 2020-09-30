@@ -169,10 +169,74 @@ class TypeInferer:
         self.visit(node.right, scope.children[1], self.int_type)
         node.static_type = self.bool_type
 
+    @visitor.when(ArithmeticNode)
+    def visit(self, node, scope, expected_type=None):
+        self.visit(node.left, scope.children[0], self.int_type)
+        self.visit(node.right, scope.children[1], self.int_type)
+        node.static_type = self.int_type
+
+    @visitor.when(IsVoidNode)
+    def visit(self, node, scope, expected_type = None):
+        self.visit(node.expression, scope.children[0])
+        self.static_type = self.bool_type
     
+    @visitor.when(ComplementNode)
+    def visit(self, node, scope, expected_type = None):
+        self.visit(node.expression, scope.children[0], self.int_type)
+        self.static_type = self.int_type
 
+    @visitor.when(FunctionCallNode)
+    def visit(self, node, scope, expected_type = None):
+        node_type = None
+        if node.type:
+            try:
+                node_type = self.context.get_type(node.type.lex)
+            except SemanticError:
+                node_type = ErrorType()
+            else:
+                if isinstance(node_type, SelfType) or isinstance(node_type, AutoType):
+                    node_type = ErrorType()
+            
+        self.visit(node.obj, scope.children[0], node_type)
+        obj_type = node.obj.static_type
 
+        try:
+            obj_type = node_type if node_type else obj_type
+            obj_method = obj_type.get_method(node.id.lex)
+            node_type = obj_type if isinstance(obj_method.return_type, SelfType) else obj_method.return_type
+        except SemanticError:
+            node_type = ErrorType()
+            obj_method = None
+        
+        if obj_method and len(node.args) == len(obj_method.param_types):
+            for arg, var , child_scope in zip(node.args, obj_method.param_infos, scope.children[1:]):
+                self.visit(arg, child_scope, var.type if var.infered else None)
+        else:
+            for arg, child_scope in zip(node.args, scope.children[1:]):
+                self.visit(arg, child_scope)
+        
+        node.static_type = node_type
 
+    @visitor.when(MemberCallNode)
+    def visit(self, node, scope, expected_type = None):
+        obj_type = self.current_type
 
+        try:
+            obj_method = obj_type.get_method(node.id.lex)
+            node_type = obj_type if isinstance(obj_method.return_type, SelfType) else obj_method.return_type
+        except SemanticError:
+            node_type = ErrorType()
+            obj_method = None
+
+        if obj_method and len(node.args) == len(obj_method.param_types):
+            for arg, var , child_scope in zip(node.args, obj_method.param_infos, scope.children[1:]):
+                self.visit(arg, child_scope, var.type if var.infered else None)
+        else:
+            for arg, child_scope in zip(node.args, scope.children[1:]):
+                self.visit(arg, child_scope)
+        
+        node.static_type = node_type
+        
+    
 
 
