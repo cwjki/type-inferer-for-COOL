@@ -152,19 +152,19 @@ class TypeInferer:
         node.static_type = self.bool_type
 
     @visitor.when(LessEqualNode)
-    def visit(self, node, scope, expected_type= None):
+    def visit(self, node, scope, expected_type=None):
         self.visit(node.left, scope.children[0], self.int_type)
         self.visit(node.right, scope.children[1], self.int_type)
         node.static_type = self.bool_type
 
     @visitor.when(LessNode)
-    def visit(self, node, scope, expected_type= None):
+    def visit(self, node, scope, expected_type=None):
         self.visit(node.left, scope.children[0], self.int_type)
         self.visit(node.right, scope.children[1], self.int_type)
         node.static_type = self.bool_type
 
     @visitor.when(EqualNode)
-    def visit(self, node, scope, expected_type= None):
+    def visit(self, node, scope, expected_type=None):
         self.visit(node.left, scope.children[0], self.int_type)
         self.visit(node.right, scope.children[1], self.int_type)
         node.static_type = self.bool_type
@@ -176,17 +176,17 @@ class TypeInferer:
         node.static_type = self.int_type
 
     @visitor.when(IsVoidNode)
-    def visit(self, node, scope, expected_type = None):
+    def visit(self, node, scope, expected_type=None):
         self.visit(node.expression, scope.children[0])
         self.static_type = self.bool_type
     
     @visitor.when(ComplementNode)
-    def visit(self, node, scope, expected_type = None):
+    def visit(self, node, scope, expected_type=None):
         self.visit(node.expression, scope.children[0], self.int_type)
         self.static_type = self.int_type
 
     @visitor.when(FunctionCallNode)
-    def visit(self, node, scope, expected_type = None):
+    def visit(self, node, scope, expected_type=None):
         node_type = None
         if node.type:
             try:
@@ -218,7 +218,7 @@ class TypeInferer:
         node.static_type = node_type
 
     @visitor.when(MemberCallNode)
-    def visit(self, node, scope, expected_type = None):
+    def visit(self, node, scope, expected_type=None):
         obj_type = self.current_type
 
         try:
@@ -237,6 +237,39 @@ class TypeInferer:
         
         node.static_type = node_type
         
-    
+    @visitor.when(NewNode)
+    def visit(self, node, scope, expected_type=None):
+        try:
+            node_type = self.context.get_type(node.type.lex)
+        except SemanticError:
+            node_type = ErrorType()
+        
+        node.static_type = node_type
 
+    @visitor.when(IntegerNode)
+    def visit(self, node, scope, expected_type=None):
+        node.static_type = self.int_type
+
+    @visitor.when(StringNode)
+    def visit(self, node, scope, expected_type=None):
+        node.static_type = self.string_type  
+
+    @visitor.when(BoolNode)
+    def visit(self, node, scope, expected_type=None):
+        node.static_type = self.bool_type
+
+    @visitor.when(IdNode)
+    def visit(self, node, scope, expected_type=None):
+        if scope.is_defined(node.token.lex):
+            var = scope.find_variable(node.token.lex)
+        
+            if expected_type:
+                var.set_upper_type(expected_type)
+
+            node_type = var.type if var.infered else AutoType()
+        
+        else:
+            node_type = ErrorType()
+        
+        node.static_type = node_type
 
