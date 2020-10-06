@@ -6,9 +6,9 @@
 
 {% block body %}
 
-{% if boolean: %}
+{% if parsing_error: %}
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <strong>La gramática no es correcta.</strong> Sugerimos revisar la info.
+        <strong>No se pudo parsear el código.</strong> Caracter inesperado: "{{parsing_error.token}}" en línea {{parsing_error.line}}, columna {{parsing_error.column}}.
         <button type="button" class="close" data-dpassismiss="alert" aria-label="Close">
         <span aria-hidden="true">&times;</span>
         </button>
