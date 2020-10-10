@@ -31,11 +31,13 @@ def index():
                 return render_template('index.html', parsing_error=parsing_error)
 
             result = Result()
+            result.code = code
 
             ast = evaluate_reverse_parse(parse, operations, tokens)
             formatter = FormatVisitor()
             result.tree = formatter.visit(ast)
             
+
             errors = []
             # TYPE COLLECTOR
             collector = TypeCollector(errors)
@@ -66,7 +68,7 @@ def index():
             result.inferences = inferences
             result.inferer_context = context
             
-            return render_template('index.html', parsing_error=None, result=result)
+            return render_template('result.html', result=result)
         
         else:
             return render_template('index.html', parsing_error=None )

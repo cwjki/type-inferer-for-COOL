@@ -63,7 +63,7 @@ class TypeInferer:
         return_type = self.current_method.return_type
         return_type = self.current_type if isinstance(return_type, SelfType) else return_type
         
-        self.visit(node.body, scope.children[0], self.current_type, return_type)
+        self.visit(node.body, scope.children[0], return_type)
         body_type = node.body.static_type
 
         for i, var in enumerate(scope.locals[1:]):
@@ -110,7 +110,7 @@ class TypeInferer:
                 self.visit(expr, child_scope, var.type if var.infered else None)
                 expr_type = expr.static_type
 
-                var,set_upper_type(expr_type)
+                var.set_upper_type(expr_type)
                 if var.infer_type():
                     self.changed = True
                     typex.name = var.type.name

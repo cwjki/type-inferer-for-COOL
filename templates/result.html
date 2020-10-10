@@ -8,25 +8,57 @@
 
 <h1>Resultados</h1><br>
 
-    <h3>==================== AST ======================</h3>
-    <h2>{{result.tree}}</h2>
+    <h2>================================== Código ==================================</h2>
+    <h4><pre>{{result.code}}</pre></h4>
 
-    <h3>==================== COLLECTING TYPES ======================</h3>
-    <h2>Context: {{result.collector_context}}</h2>
-    <h2>Errors: {{result.collector_errors}}</h2>
+    <h2>================================== AST ==================================</h2>
+    <h3><pre>{{result.tree}}</pre></h3>
 
-    <h3>==================== BUILDING TYPES ======================</h3>
-    <h2>Context: {{result.builder_context}}</h2>
-    <h2>Errors: {{result.builder_errors}}</h2>
+    <h2>================================== COLLECTING TYPES ==================================</h2>
+        <h4><pre>Context: {{result.collector_context}}</pre></h4>
+        
+        <h4> 
+            Errors:
+                {% for error in result.collector_errors %}
+                    <br>{{error}}
+                {% endfor %}
+        </h4>
 
-    <h3>==================== CHECKING TYPES ======================</h3>
-    <h2>Context: {{result.checker_context}}</h2>
-    <h2>Errors: {{result.checker_errors}}</h2>
+    <h2>================================== BUILDING TYPES ==================================</h2>
+        <h4><pre>Context: {{result.builder_context}}</pre></h4>
+    
+        <h4>
+            Errors: 
+            {% for error in result.builder_errors %}
+                <br>{{error}}
+            {% endfor %}
+        </h4>
 
-    <h3>==================== INFERING TYPES ======================</h3>
-    <h2>Context: {{result.inferer_context}}</h2>
-    <h2>Errors: {{result.errors}}</h2>
-    <h2>Inferences: {{result.inferences}}</h2>
+    <h2>================================== CHECKING TYPES ==================================</h2>
+        <h4><pre>{{result.checker_context}}</pre></h4>
+        
+        <h4>
+            Errors:
+            {% for error in result.checker_errors %}
+                <br>{{error}}
+            {% endfor %}
+        </h4>
 
+    <h2>==================== INFERING TYPES ======================</h2>
+        <h4><pre>{{result.inferer_context}}</pre></h4>
+
+        <h4>
+            Errors:
+            {% for error in result.errors %}
+                <br>{{error}}
+            {% endfor %}
+        </h4>
+        
+        <h4>
+            Inferences:
+            {% for inference in result.inferences %}
+                <br>{{inference}}
+            {% endfor %} 
+        </h4>
 
 {% endblock %}

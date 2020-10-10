@@ -254,8 +254,6 @@ class VariableInfo:
         return False
 
 
-            
-
 class Scope:
     def __init__(self, parent=None):
         self.locals = []
